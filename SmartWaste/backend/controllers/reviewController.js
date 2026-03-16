@@ -103,28 +103,30 @@ export const getSentimentAnalysis = async (req, res) => {
   }
 };
 
+import axios from "axios";
+
 // Helper function to analyze sentiment using Groq AI
-async function analyzeSentiment(text) {
+export async function analyzeSentiment(text) {
   try {
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
     if (!GROQ_API_KEY) {
-      console.error('GROQ_API_KEY is missing');
+      console.error("GROQ_API_KEY is missing");
       return null;
     }
 
     const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
+      "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         messages: [
           {
-            role: 'system',
+            role: "system",
             content:
               'You are a sentiment analysis expert. Analyze the sentiment of the given text and respond with a JSON object only containing a score between -1 (very negative) and 1 (very positive), and a label that is one of: "positive", "negative", or "neutral".'
           },
           {
-            role: 'user',
+            role: "user",
             content: text
           }
         ],
@@ -134,12 +136,17 @@ async function analyzeSentiment(text) {
       {
         headers: {
           Authorization: `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         }
       }
     );
 
-    const responseContent = response.data.choices[0].message.content;
+    const responseContent = response.data?.choices?.[0]?.message?.content;
+
+    if (!responseContent) {
+      console.error("Empty response from Groq");
+      return null;
+    }
 
     try {
       const parsedResponse = JSON.parse(responseContent);
@@ -148,11 +155,14 @@ async function analyzeSentiment(text) {
         label: parsedResponse.label
       };
     } catch (parseError) {
-      console.error('Error parsing sentiment response:', parseError);
+      console.error("Error parsing sentiment response:", parseError);
       return null;
     }
   } catch (error) {
-    console.error('Error calling Groq API:', error);
+    console.error(
+      "Error calling Groq API:",
+      error?.response?.data || error.message
+    );
     return null;
   }
 }
