@@ -6,7 +6,7 @@ const Chatbot = () => {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-    const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    // const API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     const handleSend = async () => {
         if (!input.trim()) return;
