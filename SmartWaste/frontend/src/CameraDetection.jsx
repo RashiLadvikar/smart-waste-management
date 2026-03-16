@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 // Flask API URL — override via VITE_ROBOFLOW_API_URL env var for production
-const FLASK_API_URL = import.meta.env.VITE_ROBOFLOW_API_URL || 'http://localhost:5001';
+const FLASK_API_URL = import.meta.env.VITE_ROBOFLOW_API_URL || 'https://smart-waste-management-tw05.onrender.com';
 
 export default function CameraDetection({ isOpen, onClose }) {
     const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'running' | 'error' | 'denied' | 'no-server'
