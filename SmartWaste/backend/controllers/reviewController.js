@@ -1,7 +1,8 @@
 // controllers/reviewController.js
 import Review from '../Models/Review.js';
 import User from '../Models/User.js';
-import axios from "axios";
+import axios from 'axios';
+
 // Add a new review
 export const addReview = async (req, res) => {
   try {
@@ -12,7 +13,9 @@ export const addReview = async (req, res) => {
     }
 
     const user = await User.findOne({ clerkId });
-    const userName = user ? `${user.firstName} ${user.lastName}` : 'Anonymous User';
+    const userName = user
+      ? `${user.firstName} ${user.lastName}`
+      : 'Anonymous User';
 
     const newReview = new Review({
       clerkId,
@@ -35,18 +38,27 @@ export const addReview = async (req, res) => {
     res.status(201).json(newReview);
   } catch (error) {
     console.error('Error adding review:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
   }
 };
 
 // Get all reviews
 export const getAllReviews = async (req, res) => {
   try {
-    const reviews = await Review.find().sort({ createdAt: -1 }).limit(100);
+    const reviews = await Review.find()
+      .sort({ createdAt: -1 })
+      .limit(100);
+
     res.status(200).json(reviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
   }
 };
 
@@ -60,6 +72,7 @@ export const getSentimentAnalysis = async (req, res) => {
         positivePercentage: 0,
         neutralPercentage: 0,
         negativePercentage: 0,
+        averageRating: 0,
         topKeywords: [],
       });
     }
@@ -69,16 +82,19 @@ export const getSentimentAnalysis = async (req, res) => {
     let negative = 0;
     let allText = '';
 
-    reviews.forEach(review => {
+    reviews.forEach((review) => {
       if (review.sentimentLabel === 'positive' || review.sentiment > 0.33) {
         positive++;
-      } else if (review.sentimentLabel === 'negative' || review.sentiment < -0.33) {
+      } else if (
+        review.sentimentLabel === 'negative' ||
+        review.sentiment < -0.33
+      ) {
         negative++;
       } else {
         neutral++;
       }
 
-      allText += ' ' + review.reviewText;
+      allText += ` ${review.reviewText}`;
     });
 
     const total = reviews.length;
@@ -98,52 +114,53 @@ export const getSentimentAnalysis = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating sentiment analysis:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
   }
 };
 
-import axios from "axios";
-
 // Helper function to analyze sentiment using Groq AI
-export async function analyzeSentiment(text) {
+export const analyzeSentiment = async (text) => {
   try {
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
     if (!GROQ_API_KEY) {
-      console.error("GROQ_API_KEY is missing");
+      console.error('GROQ_API_KEY is missing');
       return null;
     }
 
     const response = await axios.post(
-      "https://api.groq.com/openai/v1/chat/completions",
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
         messages: [
           {
-            role: "system",
+            role: 'system',
             content:
-              'You are a sentiment analysis expert. Analyze the sentiment of the given text and respond with a JSON object only containing a score between -1 (very negative) and 1 (very positive), and a label that is one of: "positive", "negative", or "neutral".'
+              'You are a sentiment analysis expert. Analyze the sentiment of the given text and respond with a JSON object only containing a score between -1 (very negative) and 1 (very positive), and a label that is one of: "positive", "negative", or "neutral".',
           },
           {
-            role: "user",
-            content: text
-          }
+            role: 'user',
+            content: text,
+          },
         ],
         temperature: 0.2,
-        max_tokens: 100
+        max_tokens: 100,
       },
       {
         headers: {
           Authorization: `Bearer ${GROQ_API_KEY}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
 
     const responseContent = response.data?.choices?.[0]?.message?.content;
 
     if (!responseContent) {
-      console.error("Empty response from Groq");
+      console.error('Empty response from Groq');
       return null;
     }
 
@@ -151,20 +168,20 @@ export async function analyzeSentiment(text) {
       const parsedResponse = JSON.parse(responseContent);
       return {
         score: parsedResponse.score,
-        label: parsedResponse.label
+        label: parsedResponse.label,
       };
     } catch (parseError) {
-      console.error("Error parsing sentiment response:", parseError);
+      console.error('Error parsing sentiment response:', parseError);
       return null;
     }
   } catch (error) {
     console.error(
-      "Error calling Groq API:",
+      'Error calling Groq API:',
       error?.response?.data || error.message
     );
     return null;
   }
-}
+};
 
 // Helper function to calculate average rating
 function calculateAverageRating(reviews) {
@@ -183,17 +200,18 @@ function extractTopKeywords(text) {
     'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves',
     'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it',
     'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'this',
-    'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been',
-    'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
-    'would', 'should', 'could', 'ought', 'im', 'youre', 'hes', 'shes',
-    'its', 'were', 'theyre', 'ive', 'youve', 'weve', 'theyve', 'id',
-    'youd', 'hed', 'shed', 'wed', 'theyd', 'ill', 'youll', 'hell',
-    'shell', 'well', 'theyll', 'isnt', 'arent', 'wasnt', 'werent',
-    'hasnt', 'havent', 'hadnt', 'doesnt', 'dont', 'didnt', 'wont',
-    'wouldnt', 'shouldnt', 'couldnt', 'cant', 'cannot', 'couldnt'
+    'that', 'these', 'those', 'am', 'be', 'been', 'being', 'have', 'has',
+    'had', 'having', 'do', 'does', 'did', 'doing', 'would', 'should',
+    'could', 'ought', 'im', 'youre', 'hes', 'shes', 'were', 'theyre',
+    'ive', 'youve', 'weve', 'theyve', 'id', 'youd', 'hed', 'shed', 'wed',
+    'theyd', 'ill', 'youll', 'hell', 'shell', 'well', 'theyll', 'isnt',
+    'arent', 'wasnt', 'werent', 'hasnt', 'havent', 'hadnt', 'doesnt',
+    'dont', 'didnt', 'wont', 'wouldnt', 'shouldnt', 'couldnt', 'cant',
+    'cannot',
   ]);
 
-  const cleanText = text.toLowerCase()
+  const cleanText = text
+    .toLowerCase()
     .replace(/[^\w\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -201,7 +219,7 @@ function extractTopKeywords(text) {
   const words = cleanText.split(' ');
   const wordFrequency = {};
 
-  words.forEach(word => {
+  words.forEach((word) => {
     if (word.length > 2 && !stopWords.has(word)) {
       wordFrequency[word] = (wordFrequency[word] || 0) + 1;
     }
@@ -209,6 +227,6 @@ function extractTopKeywords(text) {
 
   return Object.entries(wordFrequency)
     .sort((a, b) => b[1] - a[1])
-    .map(entry => entry[0])
+    .map((entry) => entry[0])
     .slice(0, 10);
 }
