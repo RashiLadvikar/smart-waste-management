@@ -106,9 +106,10 @@ export const getSentimentAnalysis = async (req, res) => {
 // Helper function to analyze sentiment using Groq AI
 async function analyzeSentiment(text) {
   try {
-    const VITE_GROQ_API_KEY = process.env.VITE_GROQ_API_KEY;
-    if (!VITE_GROQ_API_KEY) {
-      console.error('VITE_VITE_GROQ_API_KEY');
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY is missing');
       return null;
     }
 
@@ -119,7 +120,8 @@ async function analyzeSentiment(text) {
         messages: [
           {
             role: 'system',
-            content: 'You are a sentiment analysis expert. Analyze the sentiment of the given text and respond with a JSON object only containing a score between -1 (very negative) and 1 (very positive), and a label that is one of: "positive", "negative", or "neutral".'
+            content:
+              'You are a sentiment analysis expert. Analyze the sentiment of the given text and respond with a JSON object only containing a score between -1 (very negative) and 1 (very positive), and a label that is one of: "positive", "negative", or "neutral".'
           },
           {
             role: 'user',
@@ -131,7 +133,7 @@ async function analyzeSentiment(text) {
       },
       {
         headers: {
-          'Authorization': `Bearer ${VITE_GROQ_API_KEY}`,
+          Authorization: `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json'
         }
       }
